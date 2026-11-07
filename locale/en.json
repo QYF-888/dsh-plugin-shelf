@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Plugin Shelf",
+    "description": "Organize installed DSH plugins: sort by name / install time / size, group freely (rename and reorder groups), switch a whole group or everything on and off, and auto-update installed plugins."
+  }
+}
