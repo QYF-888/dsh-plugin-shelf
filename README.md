@@ -6,19 +6,26 @@
 
 ## 安装
 
-三种方式任选其一（装完重启 DSH，侧栏出现「插件书架」）：
+[![npm](https://img.shields.io/npm/v/dsh-plugin-shelf.svg)](https://www.npmjs.com/package/dsh-plugin-shelf)
+[![license](https://img.shields.io/npm/l/dsh-plugin-shelf.svg)](LICENSE)
 
-1. **插件市场**：在 DSH 的插件市场里搜 `dsh-plugin-shelf` / 「插件书架」，一键安装。
-2. **从 GitHub 装**：
+四种方式任选其一（装完重启 DSH，侧栏出现「插件书架」）：
+
+1. **从 npm 装**（推荐：npm 来源才能被本插件自己的自动更新接管）：
    ```
-   plugin_manager install_bundle target=github:OWNER/dsh-plugin-shelf
+   plugin_manager install_bundle target=dsh-plugin-shelf
    ```
-3. **本地目录装**（开发时）：
+2. **插件市场**：在 DSH 的插件市场里搜 `dsh-plugin-shelf` / 「插件书架」，一键安装。
+3. **从 GitHub 装**：
    ```
-   plugin_manager install_bundle target=D:\path\to\dsh-plugin-shelf
+   plugin_manager install_bundle target=github:QYF-888/dsh-plugin-shelf
+   ```
+4. **本地目录装**（开发时）：
+   ```
+   plugin_manager install_bundle target=D:\\path\\to\\dsh-plugin-shelf
    ```
 
-> 装到 profile 后本插件以 `link:`/`github:` 依赖形式出现，属于 npm-like 之外的来源时不会参与自动更新（结果里标 `non-npm-source`），其余管理功能照常。
+> 装到 profile 后若来源是 `file:` / `link:` / `git+` / `github:`，本插件不会把它算作可自动更新项（结果里标 `non-npm-source`），其余管理功能照常。
 
 ## 兼容
 
