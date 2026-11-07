@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-shelf",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "description": "Plugin Shelf — 已安装 DSH 插件书架：排序、自由分组、一键启停、批量自动更新 · Browse, group, sort, toggle and batch-update the DSH plugins you already installed.",
   "license": "MIT",
