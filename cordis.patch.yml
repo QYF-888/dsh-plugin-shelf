@@ -1,0 +1,3 @@
+- insert:
+    - id: plugin-shelf
+      name: 'dsh-plugin-shelf'
