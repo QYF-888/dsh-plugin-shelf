@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 — npm 首发
+
+- 发布到 npm：`dsh-plugin-shelf`（`npm i dsh-plugin-shelf`，或 `plugin_manager install_bundle target=dsh-plugin-shelf`）。
+- 与 1.1.0 内容一致，仅版本号不同：1.1.0 是注册表处理首个 PUT 时的镜像版本，1.1.1 是 `latest`。
+
 ## 1.1.0
 
 - 一键更新：自动更新卡片右侧「一键更新（N）」，两次点击确认（4 秒内点第二下才执行），批量检查并逐个 `removeBundle → installBundle`，完成后给出「成功/总数 · 排队 · 失败」汇总卡（可 ✕ 关闭）。
