@@ -1,0 +1,72 @@
+{
+  "name": "dsh-plugin-shelf",
+  "version": "1.1.0",
+  "type": "module",
+  "description": "Plugin Shelf — 已安装 DSH 插件书架：排序、自由分组、一键启停、批量自动更新 · Browse, group, sort, toggle and batch-update the DSH plugins you already installed.",
+  "license": "MIT",
+  "author": "dsh-plugin-shelf contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/QYF-888/dsh-plugin-shelf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/QYF-888/dsh-plugin-shelf/issues"
+  },
+  "homepage": "https://github.com/QYF-888/dsh-plugin-shelf#readme",
+  "icon": "icon.svg",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "plugin-manager",
+    "plugin-shelf",
+    "auto-update",
+    "market"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs/screenshot.png"
+  ],
+  "scripts": {
+    "test": "node test/host-harness.mjs",
+    "check": "node --check index.js && node --check client.js && node test/host-harness.mjs"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    },
+    "compatibility": {
+      "dsh": ">=0.2.0-rc.1 <0.3.0",
+      "profiles": [
+        "desktop",
+        "web",
+        "headless"
+      ]
+    }
+  }
+}
