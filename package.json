@@ -40,7 +40,8 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "docs/screenshot.png"
+    "docs/screenshot.png",
+    "docs/verify-three-features.png"
   ],
   "scripts": {
     "test": "node test/host-harness.mjs",
