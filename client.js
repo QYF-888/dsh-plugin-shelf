@@ -122,7 +122,7 @@ window.__ModuleLoader__.load({
         filterOnlyUngrouped: '仅未分组',
         filterActive: '已筛选',
         pickerTitle: '把插件加进分组',
-        pickerHint: '勾选要加入这个分组的插件，已属于其他分组的会被移过来',
+        pickerHint: '勾选要加入这个分组的插件；这里只列出还没有分组的插件',
         pickerSearch: '搜索插件…',
         pickerSelectAll: '全选可见',
         pickerClear: '清空',
@@ -143,6 +143,18 @@ window.__ModuleLoader__.load({
         restartNeededHint: '宿主侧的改动（启用状态、版本）重启 DSH 后才完全生效',
         updateQueued: '已排队（插件被宿主占用，无法在线移除）',
         updateQueuedHint: '该插件已暂时停用并写入待办记录，重启 DSH 后会自动完成安装并恢复启用',
+        removeFromGroup: '移出分组',
+        removeFromGroupHint: '把这个插件从当前分组移出去（回到未分组）',
+        uninstall: '卸载',
+        uninstallHint: '把这个插件从 profile 卸载',
+        uninstallConfirm: '确认卸载',
+        uninstallConfirmHint: '再点一次就从 profile 卸载该插件，分组记录会一起清掉',
+        uninstallDone: '已卸载',
+        uninstallBusy: '正在卸载…',
+        uninstallInUse: '插件仍被宿主加载：已把它停用并记入待办。现在再点一次 ✕ 立即卸载，或重启 DSH 后自动完成',
+        uninstallBuiltin: '内置插件不参与卸载',
+        uninstallFailed: '卸载失败',
+        pickerNoFree: '没有可加入的插件：它们都已经在某个分组里了',
       },
       en: {
         panel: 'Plugin Shelf',
@@ -248,7 +260,7 @@ window.__ModuleLoader__.load({
         filterOnlyUngrouped: 'Ungrouped only',
         filterActive: 'filtered',
         pickerTitle: 'Add plugins to a group',
-        pickerHint: 'Tick the plugins to put in this group; ones already in another group move here',
+        pickerHint: 'Tick the plugins to put in this group; only plugins that are in no group are listed',
         pickerSearch: 'Search plugins…',
         pickerSelectAll: 'Select visible',
         pickerClear: 'Clear',
@@ -269,6 +281,18 @@ window.__ModuleLoader__.load({
         restartNeededHint: 'Host-side changes (enablement, versions) apply after a DSH restart',
         updateQueued: 'Queued (the host still has this plugin loaded, so it cannot be removed live)',
         updateQueuedHint: 'The plugin was disabled and recorded as pending; the install completes and enablement is restored after a DSH restart',
+        removeFromGroup: 'Remove from group',
+        removeFromGroupHint: 'Take this plugin out of the current group (back to ungrouped)',
+        uninstall: 'Uninstall',
+        uninstallHint: 'Uninstall this plugin from the profile',
+        uninstallConfirm: 'Confirm uninstall',
+        uninstallConfirmHint: 'Click again to uninstall this plugin from the profile; its group records go with it',
+        uninstallDone: 'Uninstalled',
+        uninstallBusy: 'Uninstalling…',
+        uninstallInUse: 'The host still has this plugin loaded: it was disabled and queued. Click ✕ once more to remove it now, or restart DSH to finish it',
+        uninstallBuiltin: 'Built-in plugins cannot be uninstalled',
+        uninstallFailed: 'Uninstall failed',
+        pickerNoFree: 'Nothing to add: every plugin already belongs to a group',
       },
     };
 
@@ -424,6 +448,13 @@ window.__ModuleLoader__.load({
 .psx-badge.psx-ok { color: var(--dsw-alias-state-success-primary); border-color: var(--dsw-alias-state-success-primary); }
 .psx-badge.psx-err { color: var(--dsw-alias-state-error-primary); border-color: var(--dsw-alias-state-error-primary); }
 .psx-empty { font-size: 12px; color: var(--dsw-alias-label-secondary); padding: 10px 12px; }
+.psx-icon { flex: none; width: 22px; height: 22px; padding: 0; border-radius: 6px; border: 1px solid transparent; background: transparent; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.psx-row .psx-icon { color: var(--dsw-alias-state-error-primary); }
+.psx-row .psx-icon.psx-icon-armed { color: var(--dsw-alias-state-error-primary); }
+.psx-icon:hover:not(:disabled) { background: var(--dsw-alias-bg-layer-2); border-color: var(--dsw-alias-state-error-primary); }
+.psx-icon:disabled { opacity: .45; cursor: not-allowed; }
+.psx-icon.psx-icon-armed { border-color: var(--dsw-alias-state-error-primary); background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-state-error-primary); font-size: 11px; width: auto; padding: 0 7px; font-weight: 600; }
+.psx-row-tail { display: flex; align-items: center; gap: 6px; flex: none; }
 .psx-note { font-size: 11px; color: var(--dsw-alias-label-secondary); margin-top: 6px; line-height: 1.6; }
 .psx-toast { position: sticky; bottom: 0; margin-top: 12px; padding: 8px 12px; border-radius: 8px; font-size: 12px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-overlay); }
 .psx-toast.psx-err { color: var(--dsw-alias-state-error-primary); border-color: var(--dsw-alias-state-error-primary); }
@@ -541,10 +572,11 @@ window.__ModuleLoader__.load({
         }
         return map;
       }, [groups]);
+      const free = React.useMemo(() => plugins.filter(plugin => !memberOf.has(plugin.name)), [plugins, memberOf]);
       const shown = React.useMemo(() => {
         const text = needle.trim().toLowerCase();
-        return text === '' ? plugins : plugins.filter(plugin => plugin.name.toLowerCase().includes(text));
-      }, [plugins, needle]);
+        return text === '' ? free : free.filter(plugin => plugin.name.toLowerCase().includes(text));
+      }, [free, needle]);
       React.useEffect(() => {
         const onKey = event => {
           if (event.key === 'Escape') onCancel();
@@ -590,7 +622,7 @@ window.__ModuleLoader__.load({
           ),
           h('div', { className: 'psx-modal-list' },
             shown.length === 0
-              ? h('div', { className: 'psx-empty' }, t('empty'))
+              ? h('div', { className: 'psx-empty' }, free.length === 0 ? t('pickerNoFree') : t('empty'))
               : shown.map(plugin => h('label', { key: plugin.name, className: 'psx-pick' },
                 h('input', {
                   type: 'checkbox',
@@ -601,7 +633,7 @@ window.__ModuleLoader__.load({
                   h('div', { className: 'psx-pick-name' }, plugin.name),
                   h('div', { className: 'psx-pick-meta' },
                     `v${plugin.version ?? '?'} · ${formatSize(plugin.sizeBytes)}`
-                    + (memberOf.has(plugin.name) ? ` · ${t('moveTo')} ${memberOf.get(plugin.name)}` : ` · ${t('ungrouped')}`)
+                    + ` · ${t('ungrouped')}`
                     + (plugin.enabled ? '' : ` · ${t('disabled')}`)),
                 ),
               )),
@@ -621,9 +653,22 @@ window.__ModuleLoader__.load({
     }
 
     function PluginRow(props) {
-      const { plugin, groups, busy, onToggle, onMove, t } = props;
-      const groupId = groups.find(group => group.members.includes(plugin.name))?.id ?? '';
+      const { plugin, groups, busy, onToggle, onMove, onRemoveFromGroup, onUninstall, confirming, t } = props;
+      const groupId = typeof props.groupId === 'string'
+        ? props.groupId
+        : (groups.find(group => group.members.includes(plugin.name))?.id ?? '');
+      const inGroup = groupId !== '' && groupId !== UNGROUPED;
+      const groupName = groups.find(group => group.id === groupId)?.name;
       return h('div', { className: `psx-row${plugin.enabled ? '' : ' psx-off'}` },
+        inGroup
+          ? h('button', {
+            type: 'button',
+            className: 'psx-icon',
+            title: `${t('removeFromGroup')}${groupName ? ` · ${groupName}` : ''}`,
+            disabled: busy,
+            onClick: () => onRemoveFromGroup(plugin.name, groupId),
+          }, '−')
+          : null,
         h('div', { className: 'psx-row-main' },
           h('div', { className: 'psx-row-name' }, plugin.name),
           h('div', { className: 'psx-row-meta' },
@@ -653,12 +698,21 @@ window.__ModuleLoader__.load({
               }))),
           ],
         }),
-        h(Switch, {
-          checked: plugin.enabled,
-          disabled: busy,
-          title: plugin.enabled ? t('enabled') : t('disabled'),
-          onToggle: next => onToggle([plugin.name], next),
-        }),
+        h('div', { className: 'psx-row-tail' },
+          h(Switch, {
+            checked: plugin.enabled,
+            disabled: busy,
+            title: plugin.enabled ? t('enabled') : t('disabled'),
+            onToggle: next => onToggle([plugin.name], next),
+          }),
+          h('button', {
+            type: 'button',
+            className: `psx-icon${confirming ? ' psx-icon-armed' : ''}`,
+            title: confirming ? t('uninstallConfirmHint') : t('uninstallHint'),
+            disabled: busy || plugin.removable === false,
+            onClick: () => onUninstall(plugin.name),
+          }, confirming ? t('uninstallConfirm') : '✕'),
+        ),
       );
     }
 
@@ -915,7 +969,7 @@ window.__ModuleLoader__.load({
     }
 
     function GroupCard(props) {
-      const { group, groups, plugins, allPlugins, busy, sort, onRename, onDelete, onMove, onToggleGroup, onToggleAll, onReorder, onCollapse, onTogglePlugin, onAddPlugins, t } = props;
+      const { group, groups, plugins, allPlugins, busy, sort, onRename, onDelete, onMove, onToggleGroup, onToggleAll, onReorder, onCollapse, onTogglePlugin, onAddPlugins, onRemoveFromGroup, onUninstall, confirmUninstall, t } = props;
       const busyAny = busy instanceof Map ? busy.size > 0 : busy === true;
       const members = plugins.filter(plugin => group.members.includes(plugin.name));
       const memberPool = Array.isArray(allPlugins) ? allPlugins : plugins;
@@ -993,9 +1047,13 @@ window.__ModuleLoader__.load({
               key: plugin.name,
               plugin,
               groups,
+              groupId: group.id,
               busy: busy.get(plugin.name) === true,
+              confirming: confirmUninstall === plugin.name,
               onToggle: names => onTogglePlugin(names, !plugin.enabled),
               onMove: onMove,
+              onRemoveFromGroup: onRemoveFromGroup,
+              onUninstall: onUninstall,
               t,
             })),
         ),
@@ -1008,7 +1066,7 @@ window.__ModuleLoader__.load({
       const shelf = React.useContext(ShelfContext);
       const {
         snap, error, busy, result, st, query, setQuery, loading,
-        reload, mutateState, togglePlugins, runAuto, updateOne, updateAll, repair, clearPending, approveAndRetry, t,
+        reload, mutateState, togglePlugins, runAuto, updateOne, updateAll, repair, clearPending, approveAndRetry, uninstall, t,
       } = shelf;
 
       const includeBuiltin = st?.ui?.includeBuiltin === true;
@@ -1020,6 +1078,25 @@ window.__ModuleLoader__.load({
 
       const [picker, setPicker] = React.useState(null);
       const [confirmClear, setConfirmClear] = React.useState(false);
+      const [confirmUninstall, setConfirmUninstall] = React.useState(null);
+      const uninstallTimer = React.useRef(null);
+      React.useEffect(() => () => {
+        if (uninstallTimer.current !== null) clearTimeout(uninstallTimer.current);
+      }, []);
+      const askUninstall = name => {
+        if (confirmUninstall === name) {
+          if (uninstallTimer.current !== null) { clearTimeout(uninstallTimer.current); uninstallTimer.current = null; }
+          setConfirmUninstall(null);
+          uninstall(name);
+          return;
+        }
+        if (uninstallTimer.current !== null) clearTimeout(uninstallTimer.current);
+        setConfirmUninstall(name);
+        uninstallTimer.current = setTimeout(() => {
+          uninstallTimer.current = null;
+          setConfirmUninstall(null);
+        }, 5000);
+      };
       const [prefs, setPrefs] = React.useState(readPrefs);
       const patchPrefs = patch => setPrefs(previous => {
         const next = { ...previous, ...patch };
@@ -1384,6 +1461,12 @@ window.__ModuleLoader__.load({
             });
           },
           onAddPlugins: target => setPicker({ groupId: target.id, name: target.name }),
+          onRemoveFromGroup: (name, targetGroupId) => mutateState(state => {
+            const target = (state.groups || []).find(entry => entry.id === targetGroupId);
+            if (target) target.members = (target.members ?? []).filter(member => member !== name);
+          }),
+          onUninstall: askUninstall,
+          confirmUninstall,
         })),
 
         picker !== null
@@ -1392,7 +1475,7 @@ window.__ModuleLoader__.load({
             hint: t('pickerHint'),
             plugins: pickerPlugins,
             groups,
-            preselected: (groups.find(group => group.id === picker.groupId)?.members ?? []),
+            preselected: [],
             t,
             onCancel: () => setPicker(null),
             onConfirm: names => {
@@ -1499,6 +1582,32 @@ window.__ModuleLoader__.load({
           mark('__all__', false);
         }
       }, [load, mark, t]);
+
+      const uninstall = useCallback(async name => {
+        if (typeof name !== 'string' || name === '') return;
+        mark(name, true);
+        try {
+          await flush();
+          const data = await rpc('uninstall', { names: [name] });
+          const row = Array.isArray(data?.rows) ? data.rows[0] : undefined;
+          if (data?.ok === true) {
+            setResult({ note: `${t('uninstallDone')} · ${name}` });
+          } else {
+            const reason = row?.error === 'builtin-not-removable'
+              ? t('uninstallBuiltin')
+              : row?.needsRestart === true
+                ? t('uninstallInUse')
+                : `${t('uninstallFailed')}: ${row?.error ?? ''}`;
+            setError(reason);
+          }
+          await load();
+        } catch (issue) {
+          setError(`${t('opFailed')}: ${issue instanceof Error ? issue.message : String(issue)}`);
+          await load();
+        } finally {
+          mark(name, false);
+        }
+      }, [flush, load, mark, t]);
 
       const updateAll = useCallback(async () => {
         mark('__updateall__', true);
@@ -1615,8 +1724,8 @@ window.__ModuleLoader__.load({
 
       const value = useMemo(() => ({
         snap, error, busy, result, st, query, setQuery, loading,
-        reload: load, mutateState, togglePlugins, runAuto, updateOne, updateAll, repair, clearPending, approveAndRetry, t,
-      }), [snap, error, busy, result, st, query, loading, load, mutateState, togglePlugins, runAuto, updateOne, updateAll, repair, clearPending, approveAndRetry, t]);
+        reload: load, mutateState, togglePlugins, runAuto, updateOne, updateAll, repair, clearPending, approveAndRetry, uninstall, t,
+      }), [snap, error, busy, result, st, query, loading, load, mutateState, togglePlugins, runAuto, updateOne, updateAll, repair, clearPending, approveAndRetry, uninstall, t]);
 
       return h(ShelfContext.Provider, { value }, h(ShelfPage));
     }
