@@ -27,6 +27,21 @@
 
 > 装到 profile 后若来源是 `file:` / `link:` / `git+` / `github:`，本插件不会把它算作可自动更新项（结果里标 `non-npm-source`），其余管理功能照常。
 
+## 最近更新
+
+### 1.1.2 — 移出分组、卸载、加插件只列未分组
+
+| 变化 | 行为 |
+| --- | --- |
+| 移出分组 | 分组内每行行首一个红色「−」，点一下回到「未分组」；未分组的行没有这个按钮 |
+| 卸载 | 每行行尾一个红色「✕」，第一次点击变「确认卸载」，5 秒内再点一次才执行；host 侧 `pluginManager.removeBundle`，并同步清掉该插件的分组记录与 journal 残留 |
+| 加插件浮窗 | 只列出当前不在任何分组的插件，已在本组或其他组的不再出现 |
+| 被挂载时卸载 | 管理器会先停用该插件并写 `step: 'uninstall'` 的 journal；重启 DSH 后由 `repairUpdates` 直接完成卸载，不会再误当成“重装” |
+
+> 本机装在 profile 里的依赖必须是 `1.1.2` 或 `link:` 指向源码目录；若被「一键更新」换成 `git+https://github.com/QYF-888/dsh-plugin-shelf.git` 且该地址仍停在旧提交，面板会跑回旧客户端。
+
+![移出分组 / 卸载 / 加插件浮窗 实测](https://raw.githubusercontent.com/QYF-888/dsh-plugin-shelf/main/docs/verify-three-features.png)
+
 ## 兼容
 
 `dsh >= 0.2.0-rc.1 < 0.3.0`，profile：`desktop` / `web` / `headless`。host 半只依赖 Node 内置模块
