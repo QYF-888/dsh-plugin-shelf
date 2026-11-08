@@ -552,6 +552,79 @@ async function setEnabled(ctx, payload) {
 }
 
 /**
+ * Uninstall one or more plugins.
+ *
+ * Removal is the same primitive updates use (`removeBundle`) —— and it hits the
+ * same wall: a plugin the running host still has mounted comes back as
+ * `bundle-in-use`, so the answer says so plainly instead of pretending.
+ * Group membership and journal rows for a removed plugin are dropped with it,
+ * otherwise the panel would keep rendering a ghost row.
+ */
+async function uninstall(ctx, payload) {
+  const manager = ctx.get('pluginManager');
+  if (manager === undefined) throw new Error('host has no pluginManager service');
+  const names = Array.isArray(payload?.names) ? payload.names.filter(name => typeof name === 'string' && name !== '') : [];
+  if (names.length === 0) return { ok: true, removed: [], rows: [] };
+  const profile = await collect(ctx);
+  const removable = new Map(profile.plugins.map(plugin => [plugin.name, plugin]));
+  const rows = [];
+  for (const name of names) {
+    const info = removable.get(name);
+    if (info === undefined) {
+      rows.push({ name, ok: false, error: 'not-installed' });
+      continue;
+    }
+    if (info.removable !== true) {
+      rows.push({ name, ok: false, error: 'builtin-not-removable' });
+      continue;
+    }
+    try {
+      const result = await manager.removeBundle(name);
+      const failed = result?.application === 'failed';
+      const failure = failed ? describeFailure(result?.error) : undefined;
+      const live = failed && LIVE_MOUNT.test(failure);
+      rows.push({
+        name,
+        ok: !failed,
+        application: result?.application,
+        version: info.version,
+        needsRestart: live,
+        error: failure,
+      });
+      if (!failed) {
+        const state = loadState();
+        for (const group of state.groups) group.members = group.members.filter(member => member !== name);
+        saveState(state);
+        const journal = loadJournal().filter(entry => entry.name !== name);
+        saveJournal(journal);
+        sizeCache.delete(name);
+      } else if (live) {
+        // The manager already disabled the bundle before failing; record the
+        // removal so the next start finishes it instead of leaving a ghost.
+        noteOperation({
+          name,
+          targetVersion: undefined,
+          beforeVersion: info.version,
+          enabled: false,
+          step: 'uninstall',
+          attempts: 1,
+          error: failure,
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      rows.push({ name, ok: false, needsRestart: LIVE_MOUNT.test(message), error: message });
+    }
+  }
+  return {
+    ok: rows.every(row => row.ok),
+    removed: rows.filter(row => row.ok).map(row => row.name),
+    restartRequired: rows.some(row => row.needsRestart === true || row.application === 'restart-required'),
+    rows,
+  };
+}
+
+/**
  * Compare every installed plugin against its registry's latest version.
  *
  * The probe goes to the registry itself: `pluginManager.inspect()` refuses an
@@ -816,6 +889,37 @@ async function repairUpdates(ctx) {
   const repaired = [];
   for (const operation of operations) {
     const current = byName.get(operation.name);
+    // An uninstall that could not run while the plugin was mounted: after a
+    // restart it is no longer loaded, so the removal completes here.
+    if (operation.step === 'uninstall') {
+      if (current === undefined || current.installed !== true) {
+        clearOperation(operation.name);
+        repaired.push({ name: operation.name, ok: true, uninstalled: true, skipped: 'already-gone' });
+        continue;
+      }
+      try {
+        const removed = await manager.removeBundle(operation.name);
+        const failure = removed && removed.application === 'failed'
+          ? describeFailure(removed.error === undefined ? 'remove failed' : removed.error)
+          : undefined;
+        if (failure !== undefined) {
+          noteOperation({ ...operation, attempts: operation.attempts + 1, error: failure });
+          repaired.push({ name: operation.name, ok: false, error: failure });
+          continue;
+        }
+        const state = loadState();
+        for (const group of state.groups) group.members = group.members.filter(member => member !== operation.name);
+        saveState(state);
+        sizeCache.delete(operation.name);
+        clearOperation(operation.name);
+        repaired.push({ name: operation.name, ok: true, uninstalled: true });
+      } catch (error) {
+        const message = describeFailure(error instanceof Error ? error.message : String(error));
+        noteOperation({ ...operation, attempts: operation.attempts + 1, error: message });
+        repaired.push({ name: operation.name, ok: false, error: message });
+      }
+      continue;
+    }
     const declaredNow = declaredSpec(operation.name);
     const declaredOk = operation.targetVersion === undefined || specPointsAt(declaredNow, operation.targetVersion);
     const alreadyThere = current !== undefined
@@ -1000,6 +1104,8 @@ async function dispatch(ctx, op, payload) {
     }
     case 'setEnabled':
       return setEnabled(ctx, payload);
+    case 'uninstall':
+      return uninstall(ctx, payload);
     case 'checkUpdates':
       return checkUpdates(ctx, payload);
     case 'update':
