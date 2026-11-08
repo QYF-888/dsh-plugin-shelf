@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2
+
+- 分组内每行行首新增红色「−」：把该插件移出当前分组（未分组的行没有这个按钮）。
+- 每行行尾新增红色「✕」卸载按钮：第一次点击变「确认卸载」，5 秒内再点一次才执行；host 侧走 `removeBundle`，并同步清掉分组记录与 journal 残留；内置插件禁用该按钮。
+- 「加插件」浮窗只列出当前不在任何分组的插件（已在本组 / 其他组的直接不显示），空列表有专门文案。
+- host 新增 `uninstall` op：`bundle-in-use` 时明确报告需要重启，不静默失败。
+- 被宿主占用导致卸载失败时写 journal（`step: 'uninstall'`），重启后 `repairUpdates` 直接完成卸载而不是重装。
+- 本机 profile 必须指向 `link:` 或 npm 上的 1.1.2；若被「一键更新」换成 `git+https://github.com/QYF-888/dsh-plugin-shelf.git`，面板会退回 1.1.1 的旧客户端（本次踩到的坑）。
+
 ## 1.1.1 — npm 首发
 
 - 发布到 npm：`dsh-plugin-shelf`（`npm i dsh-plugin-shelf`，或 `plugin_manager install_bundle target=dsh-plugin-shelf`）。
